@@ -12,15 +12,16 @@ if TYPE_CHECKING:
     from .reflection_model import Reflection
     from .feedback_model import Feedback
     from .resource_model import Resource
+    from .chatmessage_model import ChatMessage
 
 class UserBase(SQLModel):
-    username: str
-    email: EmailStr = Field()
+    username: str = Field(unique=True, index=True)  # Added unique constraint
+    email: EmailStr = Field(unique=True, index=True)  # Added unique constraint
 
 class User(BaseUUIDModel, UserBase, table=True):
     __tablename__ = "users"
 
-    hashed_password: str | None = Field(default=None, nullable=False, index=True)
+    hashed_password: str = Field(nullable=False)  # Removed default=None
     
     # Relationships
     focus_sessions: list["FocusSession"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete"})
@@ -30,4 +31,5 @@ class User(BaseUUIDModel, UserBase, table=True):
     reflections: list["Reflection"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete"})
     feedbacks: list["Feedback"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete"})
     resources: list["Resource"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete"})
+    chat_messages: list["ChatMessage"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete"})
 

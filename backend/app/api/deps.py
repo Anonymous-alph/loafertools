@@ -2,8 +2,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 from _collections_abc import AsyncGenerator
-from app.db.database import AsyncSessionLocal
-from app.models.user_model import User
+from app.db.neondb import AsyncSessionLocal
+from app.models import User
 from app.core.jwt import decode_access_token
 
 
@@ -28,8 +28,7 @@ async def get_current_user(
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return user
 
-    
 
 
 
-    
+
