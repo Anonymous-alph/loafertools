@@ -9,12 +9,8 @@ if TYPE_CHECKING:
     from .focus_model import FocusSession
 
 class DistractionBase(SQLModel):
-    distraction_type: str  # "tab_switch" | "app_switch" | "idle" | "blocked_site"
-    source_app: str | None = None  # e.g., "Chrome", "Discord"
-    destination_app: str | None = None
-    url: str | None = None
+    name: str = Field(max_length=100)
     duration_seconds: int | None = None
-    occurred_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Distraction(BaseUUIDModel, DistractionBase, table=True):
     __tablename__ = "distractions"

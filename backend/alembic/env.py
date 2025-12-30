@@ -16,17 +16,10 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 from app.core.config import settings
 
 # Import all models to register them with SQLModel
-from app.db.base import *  # noqa
+from app.models import *  # Import all models
+from app.db.base import Base  # Or wherever your Base is
 
-# this is the Alembic Config object
-config = context.config
-
-# Interpret the config file for Python logging
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
-
-# Use SQLModel's metadata
-target_metadata = SQLModel.metadata
+target_metadata = Base.metadata
 
 
 def get_url():

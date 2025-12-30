@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class ResourceBase(SQLModel):
     title: str = Field(max_length=255)
     url: str | None = None
-    resource_type: str  # "article" | "video" | "book" | "tool"
+    resource_type: str  
     notes: str | None = None
     is_favorite: bool = Field(default=False)
 
