@@ -8,19 +8,14 @@ from typing import Optional
 
 class FocusSessionStart(BaseModel):
     """Request to start a new focus session"""
-    duration_minutes: int = Field(default=25, ge=1, le=120)
-    session_type: str = Field(default="focus", pattern="^(focus|break)$")
+    duration_minutes: int = Field(default=25, ge=1, le=180)
+    break_duration_minutes: int = Field(default=5, ge=1, le=60)
+    session_type: str = Field(default="focus")  # "focus" | "break" | "long_break"
 
 
 class FocusSessionComplete(BaseModel):
     """Request to complete the active session"""
-    actual_duration: Optional[int] = Field(default=None, ge=0, le=120)
-
-
-class DistractionLog(BaseModel):
-    """Log a distraction during active session"""
-    name: str = Field(..., min_length=1, max_length=100)
-    duration_seconds: Optional[int] = Field(default=None, ge=0)
+    notes: str | None = None
 
 
 # ============ RESPONSE SCHEMAS ============
@@ -28,28 +23,33 @@ class DistractionLog(BaseModel):
 class DistractionResponse(BaseModel):
     """Distraction response"""
     id: UUID
-    name: str
-    duration_seconds: Optional[int]
+    focus_session_id: UUID
+    distraction_type: str
+    source_app: str | None
+    destination_app: str | None
+    url: str | None
+    duration_seconds: int | None
+    occurred_at: datetime
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class FocusSessionResponse(BaseModel):
     """Focus session response"""
     id: UUID
+    user_id: UUID
     duration_minutes: int
+    break_duration_minutes: int
     session_type: str
-    completed: bool
-    start_time: datetime
-    end_time: Optional[datetime]
-    actual_duration: Optional[int]
+    started_at: datetime | None
+    ended_at: datetime | None
+    is_completed: bool
     created_at: datetime
-    updated_at: Optional[datetime]
-    
-    class Config:
-        from_attributes = True
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class FocusSessionWithDistractions(FocusSessionResponse):
@@ -64,6 +64,7 @@ class FocusSessionStats(BaseModel):
     total_sessions: int
     completed_sessions: int
     total_focus_minutes: int
+    total_break_minutes: int
     total_distractions: int
     average_session_duration: float
     completion_rate: float
