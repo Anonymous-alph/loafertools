@@ -80,7 +80,7 @@ async def cancel_session(
     await db.commit()
     
     
-@router.get("/active, response_model=FocusSessionResponse")
+@router.get("/active", response_model=FocusSessionResponse)
 async def get_current_session(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user)
@@ -89,4 +89,67 @@ async def get_current_session(
     if not session:
         raise HTTPException(404, "No active Session")
     return session
+
+@router.get("/history", response_model=list[FocusSessionResponse])
+async def get_history(
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(FocusSession)
+        .where(FocusSession.user_id == user.id, FocusSession.is_completed == True )
+        .order_by(FocusSession.created_at.desc())
+        .limit(limit)
+    )
+    return result.scalars().all()
+
+#Distractions Tracking/logging Endpoints
+
+@router.post("/distractions", response_model=DistractionResponse, status_code=status.HTTP_201_CREATED)
+async def log_distraction(
+    data: DistractionCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    session = await get_active_session(db, user.id)
+    if not session:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "No active session")
+    
+    distraction = Distraction(
+        focus_session_id = session.id,
+        occured_at = datetime.now(timezone.utc),
+        **data.model_dump()
+    )
+    db.add(distraction)
+    await db.commit()
+    await db.refresh(distraction)
+    return distraction
+
+@router.get("/distractions", response_model = list[DistractionResponse])
+async def get_distractions(
+    session_id: UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    if session_id:
+        result = await db.execute(
+            select(FocusSession).where(
+                FocusSession.id == session_id,
+                FocusSession.user_id == user.id
+            )
+        )
+        if not result.scalar_one_or_none():
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Session not found")
+        query = select(Distraction).where(Distraction.focus_session_id == session_id)
+    else:
+        session = await get_active_session(db, user.id)
+        if not session:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "No active session")
+        query = select(Distraction).where(Distraction.focus_session_id == session.id)
+        
+    result = await db.execute(query.order_by(Distraction.occured_at))
+    return result.scalars().all()
+
+
 
